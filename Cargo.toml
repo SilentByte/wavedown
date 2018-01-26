@@ -1,0 +1,6 @@
+[package]
+name = "wavedown"
+version = "0.1.0"
+authors = ["Rico A. Beti <rico.beti@silentbyte.com>"]
+
+[dependencies]
