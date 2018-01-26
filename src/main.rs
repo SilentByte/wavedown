@@ -4,6 +4,7 @@
 /// Copyright (c) 2018 SilentByte
 /// <https://github.com/SilentByte/wavedown>
 ///
+
 #[macro_use]
 extern crate clap;
 
@@ -18,10 +19,18 @@ use std::fs::File;
 type AppError = Result<(), String>;
 
 #[derive(Debug)]
+enum OutputType {
+    Byte,
+    Short,
+    Float,
+}
+
+#[derive(Debug)]
 struct AppArgs {
     input: String,
     output: String,
     samples: usize,
+    output_type: OutputType,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -65,12 +74,25 @@ fn main() {
             .short("s")
             .required(true)
             .takes_value(true))
+        .arg(Arg::with_name("TYPE")
+            .help("Sets the type of the output values")
+            .long("type")
+            .short("t")
+            .takes_value(true)
+            .possible_values(&["byte", "short", "float"])
+            .default_value("short"))
         .get_matches();
 
     let result = run(AppArgs {
         input: matches.value_of("INPUT").unwrap().into(),
         output: matches.value_of("OUTPUT").unwrap().into(),
         samples: value_t_or_exit!(matches.value_of("SAMPLES"), usize),
+        output_type: match matches.value_of("TYPE").unwrap().to_lowercase().as_ref() {
+            "byte" => OutputType::Byte,
+            "short" => OutputType::Short,
+            "float" => OutputType::Float,
+            _ => panic!("Invalid output type.")
+        },
     });
 
     match result {
@@ -133,9 +155,7 @@ fn run(args: AppArgs) -> AppError {
         };
 
         output_stream
-            .write_fmt(format_args!("{} {}\n",
-                                    average_peak.min,
-                                    average_peak.max))
+            .write(format_peak(&average_peak, &args).as_bytes())
             .map_err(|_| "Could not write to output.".to_owned())?;
     }
 
@@ -162,3 +182,18 @@ fn read_pcm_from_stream(stream: &mut Read) -> Result<Vec<i16>, String> {
     }
 }
 
+fn format_peak(peak: &MinMax<i16>, args: &AppArgs) -> String {
+    return match args.output_type {
+        OutputType::Byte => format!("{} {}\n",
+                                    peak.min / (0xFFFF / 0xFF) as i16,
+                                    peak.max / (0xFFFF / 0xFF) as i16),
+
+        OutputType::Short => format!("{} {}\n",
+                                     peak.min,
+                                     peak.max),
+
+        OutputType::Float => format!("{} {}\n",
+                                     peak.min as f32 / 0xFFFF as f32,
+                                     peak.max as f32 / 0xFFFF as f32),
+    };
+}
