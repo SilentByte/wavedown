@@ -4,12 +4,19 @@
 /// Copyright (c) 2018 SilentByte
 /// <https://github.com/SilentByte/wavedown>
 ///
-
 #[macro_use]
 extern crate clap;
 
 use clap::App;
 use clap::Arg;
+
+type AppError = Result<(), String>;
+
+#[derive(Debug)]
+struct AppArgs {
+    input: String,
+    samples: usize,
+}
 
 fn main() {
     let matches = App::new("wavedown")
@@ -31,4 +38,22 @@ fn main() {
             .required(true)
             .takes_value(true))
         .get_matches();
+
+    let result = run(AppArgs {
+        input: matches.value_of("INPUT").unwrap().into(),
+        samples: value_t_or_exit!(matches.value_of("SAMPLES"), usize)
+    });
+
+    match result {
+        Ok(_) => std::process::exit(0),
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1)
+        }
+    }
 }
+
+fn run(args: AppArgs) -> AppError {
+    Ok(())
+}
+
