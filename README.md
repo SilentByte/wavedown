@@ -1,5 +1,9 @@
 
-# Wavedown
+Wavedown
+========
+[![Build Status](https://travis-ci.org/SilentByte/wavedown.svg?branch=master)](https://travis-ci.org/SilentByte/wavedown)
+[![MIT License](https://img.shields.io/badge/license-MIT%20License-blue.svg)](https://opensource.org/licenses/MIT)
+
 
 A utility that transforms a stream of raw PCM 16bit LE data into a fixed-length waveform representation, written in Rust.
 
