@@ -20,6 +20,7 @@ type AppError = Result<(), String>;
 #[derive(Debug)]
 struct AppArgs {
     input: String,
+    output: String,
     samples: usize,
 }
 
@@ -51,6 +52,13 @@ fn main() {
             .short("i")
             .takes_value(true)
             .default_value("-"))
+        .arg(Arg::with_name("OUTPUT")
+            .index(2)
+            .help("Sets the output file")
+            .long("output")
+            .short("o")
+            .takes_value(true)
+            .default_value("-"))
         .arg(Arg::with_name("SAMPLES")
             .help("Sets the number of samples to output")
             .long("samples")
@@ -61,6 +69,7 @@ fn main() {
 
     let result = run(AppArgs {
         input: matches.value_of("INPUT").unwrap().into(),
+        output: matches.value_of("OUTPUT").unwrap().into(),
         samples: value_t_or_exit!(matches.value_of("SAMPLES"), usize),
     });
 
@@ -84,7 +93,11 @@ fn run(args: AppArgs) -> AppError {
             .map_err(|_| "File input stream could not be read.")?)
     };
 
-    let mut output_stream = BufWriter::new(stdout());
+    let mut output_stream: Box<Write> = match args.output.as_ref() {
+        "-" => Box::new(BufWriter::new(stdout())),
+        output @ _ => Box::new(File::create(output)
+            .map_err(|_| "File output stream could not be created.")?)
+    };
 
     let pcm_data = read_pcm_from_stream(&mut *input_stream)?;
     let pcm_data_count = pcm_data.len();
